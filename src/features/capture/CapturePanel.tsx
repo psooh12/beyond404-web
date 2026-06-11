@@ -170,7 +170,7 @@ export function CapturePanel({
   async function startCamera() {
     if (!canUseCamera) {
       setCameraReady(false);
-      setCameraMessage("이 브라우저에서는 실시간 카메라 대신 데모 촬영 버튼을 사용해 주세요.");
+      setCameraMessage("이 브라우저에서는 실시간 카메라 대신 데모 촬영으로 진행해 주세요.");
       return;
     }
 
