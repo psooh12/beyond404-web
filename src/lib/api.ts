@@ -44,6 +44,17 @@ export type PickupLocationPayload = {
   pickupLng: number;
 };
 
+export type CapturePayload = {
+  exteriorPhotoFileName: string;
+  labelPhotoFileName: string;
+  agreedToCreditPolicy: boolean;
+  applianceType: string;
+  brand: string;
+  modelName: string;
+  estimatedAge: string;
+  exteriorCondition: string;
+};
+
 export type BookingPayload = PickupLocationPayload & {
   bookingDate?: string;
   bookingTime?: string;
