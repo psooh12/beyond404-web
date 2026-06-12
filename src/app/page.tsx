@@ -132,6 +132,7 @@ export default function HomePage() {
   const [reservationLabel, setReservationLabel] = useState("");
   const [reservationAddress, setReservationAddress] = useState("");
   const [demoUser, setDemoUser] = useState<DemoUser | null>(null);
+  const [lastCaptureSubmission, setLastCaptureSubmission] = useState<CaptureSubmission | null>(null);
 
   useEffect(() => {
     const savedUser = window.localStorage.getItem("swapit-demo-user");
@@ -194,9 +195,6 @@ export default function HomePage() {
     onSuccess: (data) => {
       setSwapRequest(data);
       window.setTimeout(() => setSwapStep("valuation"), 1100);
-    },
-    onError: () => {
-      setSwapStep("capture");
     },
   });
 
@@ -280,13 +278,13 @@ export default function HomePage() {
 
   const error =
     createMutation.error ??
-    analyzeMutation.error ??
     acceptValuationMutation.error ??
     bookingMutation.error ??
     creditMutation.error;
 
   const resetExchangeFlow = () => {
     setFileName("");
+    setLastCaptureSubmission(null);
     setSelectedPurchaseProductId(null);
     setSwapRequest(null);
     setSelectedAppliance(applianceOptions[0].id);
@@ -371,6 +369,7 @@ export default function HomePage() {
               ) : swapItOpened ? (
                 <SwapItFeatureScreen
                   error={error}
+                  analyzeError={analyzeMutation.error}
                   fileName={fileName}
                   isBusy={isBusy}
                   homeSwapStatus={homeSwapStatus}
@@ -407,9 +406,20 @@ export default function HomePage() {
                   onStart={() => setSwapStep("capture")}
                   onFileChange={setFileName}
                   onAnalyze={(submission) => {
+                    setLastCaptureSubmission(submission);
                     setFileName(submission.exteriorPhotoFileName);
+                    analyzeMutation.reset();
                     setSwapStep("analyzing");
                     analyzeMutation.mutate(submission);
+                  }}
+                  onRetryAnalysis={() => {
+                    if (!lastCaptureSubmission) {
+                      setSwapStep("capture");
+                      return;
+                    }
+                    analyzeMutation.reset();
+                    setSwapStep("analyzing");
+                    analyzeMutation.mutate(lastCaptureSubmission);
                   }}
                   onValuationNext={() => acceptValuationMutation.mutate("booking")}
                   onOpenPurchaseFlow={() => acceptValuationMutation.mutate("market")}
@@ -945,6 +955,7 @@ function getHomeStatusCard(status: HomeSwapStatus, reservationLabel: string) {
 
 function SwapItFeatureScreen(props: {
   error: unknown;
+  analyzeError: unknown;
   fileName: string;
   isBusy: boolean;
   homeSwapStatus: HomeSwapStatus;
@@ -963,6 +974,7 @@ function SwapItFeatureScreen(props: {
   onStart: () => void;
   onFileChange: (fileName: string) => void;
   onAnalyze: (submission: CaptureSubmission) => void;
+  onRetryAnalysis: () => void;
   onValuationNext: () => void;
   onOpenPurchaseFlow: () => void;
   selectedPurchaseProductId: "washer" | "fridge" | "aircon" | null;
@@ -1050,7 +1062,14 @@ function SwapItFeatureScreen(props: {
             onCancel={props.onBack}
           />
         ) : null}
-        {props.step === "analyzing" ? <AnalyzingPanel applianceLabel={selectedLabel} /> : null}
+        {props.step === "analyzing" ? (
+          <AnalyzingPanel
+            applianceLabel={selectedLabel}
+            error={props.analyzeError instanceof Error ? props.analyzeError.message : null}
+            onRetake={() => props.onBack()}
+            onRetry={props.onRetryAnalysis}
+          />
+        ) : null}
         {props.step === "valuation" ? (
           <PreValuationPanel
             loading={props.isBusy}

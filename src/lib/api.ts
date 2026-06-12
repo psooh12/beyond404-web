@@ -105,6 +105,7 @@ export function analyzePhoto(id: number, payload: CapturePayload) {
       fileName: payload.exteriorPhotoFileName,
       exteriorPhotoFileName: payload.exteriorPhotoFileName,
       labelPhotoFileName: payload.labelPhotoFileName,
+      imageUrl: payload.exteriorPhotoFileName,
       applianceType: payload.applianceType,
       agreedToCreditPolicy: payload.agreedToCreditPolicy,
     }),
