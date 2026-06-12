@@ -10,6 +10,7 @@ import {
   ShieldCheck,
   X,
 } from "lucide-react";
+import type { CSSProperties } from "react";
 import { useEffect, useRef, useState } from "react";
 
 type ApplianceId = "washing_machine" | "refrigerator" | "air_conditioner" | "microwave" | "tv";
@@ -262,13 +263,32 @@ async function callLookupSpecsApi(modelName: string): Promise<{
   return response.json();
 }
 
-const GUIDE_FRAME_SIZES: Record<ApplianceId, { width: number; height: number }> = {
-  refrigerator:    { width: 250, height: 435 },
-  washing_machine: { width: 285, height: 355 },
-  air_conditioner: { width: 260, height: 440 },
-  microwave:       { width: 290, height: 200 },
-  tv:              { width: 290, height: 163 },
+const GUIDE_FRAME_PROFILES: Record<ApplianceId, { width: string; aspectRatio: string; maxHeight: string }> = {
+  refrigerator: { width: "min(68vw, 260px)", aspectRatio: "9 / 16", maxHeight: "52dvh" },
+  washing_machine: { width: "min(72vw, 285px)", aspectRatio: "4 / 5", maxHeight: "48dvh" },
+  air_conditioner: { width: "min(68vw, 260px)", aspectRatio: "9 / 16", maxHeight: "52dvh" },
+  microwave: { width: "min(82vw, 320px)", aspectRatio: "16 / 10", maxHeight: "34dvh" },
+  tv: { width: "min(84vw, 330px)", aspectRatio: "16 / 9", maxHeight: "34dvh" },
 };
+
+const LABEL_GUIDE_FRAME_STYLE: CSSProperties = {
+  width: "min(82vw, 320px)",
+  aspectRatio: "16 / 9",
+  maxHeight: "32dvh",
+};
+
+function getGuideFrameStyle(applianceId: ApplianceId, target: CaptureTarget): CSSProperties {
+  if (target === "label") {
+    return LABEL_GUIDE_FRAME_STYLE;
+  }
+
+  const profile = GUIDE_FRAME_PROFILES[applianceId];
+  return {
+    width: profile.width,
+    aspectRatio: profile.aspectRatio,
+    maxHeight: profile.maxHeight,
+  };
+}
 
 export function CapturePanel({
   fileName,
@@ -706,7 +726,11 @@ export function CapturePanel({
           <p className="rounded-full bg-black/55 px-4 py-2 text-[11px] font-black text-white/90">
             글씨가 잘 보이도록 가까이 대주세요
           </p>
-          <div ref={frameRef} className="h-[150px] w-[310px] rounded-2xl border-2 border-dashed border-white/65" />
+          <div
+            ref={frameRef}
+            className="rounded-2xl border-2 border-dashed border-white/65"
+            style={getGuideFrameStyle(applianceId, "label")}
+          />
           <p className="text-center text-[11px] font-semibold leading-5 text-white/55">
             후면·측면·제품 내부 어디든 라벨이 있는 곳을 찍어주세요
           </p>
@@ -780,7 +804,7 @@ export function CapturePanel({
         <div
           ref={frameRef}
           className="rounded-[20px] border-2 border-[#35ff77]"
-          style={GUIDE_FRAME_SIZES[applianceId]}
+          style={getGuideFrameStyle(applianceId, target)}
         />
         <p className="rounded-full bg-black/55 px-4 py-2 text-center text-[11px] font-black text-white/90">
           {targetDescriptions[target].title}
