@@ -83,8 +83,21 @@ export type BookingSelection = {
 
 const LeafletTrackingMap = dynamic(
   () => import("@/components/maps/LeafletTrackingMap").then((module) => module.LeafletTrackingMap),
-  { ssr: false },
+  {
+    ssr: false,
+    loading: () => <div className="h-full w-full bg-[linear-gradient(180deg,#f5f6f8,#e8edf3)]" />,
+  },
 );
+
+const GoogleCanvasMap = dynamic(
+  () => import("@/components/maps/GoogleCanvasMap").then((module) => module.GoogleCanvasMap),
+  {
+    ssr: false,
+    loading: () => <div className="h-full w-full bg-[linear-gradient(180deg,#f5f6f8,#e8edf3)]" />,
+  },
+);
+
+const googleMapsApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY?.trim() ?? "";
 
 const defaultPickupCoords = { lat: 37.5665, lng: 126.978 };
 const defaultAddress = "서울특별시 중구 세종대로 110";
@@ -381,6 +394,18 @@ function ScheduleBooking({
 
   return (
     <div>
+      <div className="overflow-hidden rounded-3xl bg-slate-50">
+        <PickupPreviewMap
+          addressLabel={pickupAddress || "수거 위치를 확인해 주세요"}
+          coordinates={pickupCoords}
+          pinLabel="P"
+        />
+      </div>
+
+      <p className="mt-3 rounded-2xl bg-slate-50 px-4 py-3 text-xs font-bold leading-5 text-slate-500">
+        시간 예약에서도 선택한 수거 위치가 지도에 바로 표시됩니다.
+      </p>
+
       <div className="rounded-3xl bg-slate-50 p-4">
         <p className="text-[13px] font-bold text-ink">{copy.dateTitle}</p>
         <div className="mt-3 rounded-2xl border border-slate-200 bg-white px-4 py-3">
@@ -740,7 +765,7 @@ function PickupPreviewMap({
         path={[]}
         zoom={19}
       />
-      <div className="pointer-events-none absolute left-4 top-4 rounded-full bg-white/95 px-4 py-2 text-[13px] font-bold text-ink shadow">
+      <div className="pointer-events-none absolute left-4 top-4 rounded-full bg-white/95 px-4 py-2 text-sm font-black text-ink shadow">
         {addressLabel}
       </div>
       <div className="pointer-events-none absolute left-4 right-4 top-16 rounded-2xl bg-white/90 px-4 py-3 text-center text-xs font-semibold text-slate-700 shadow">
