@@ -1,7 +1,7 @@
 "use client";
 
 import type { SwapRequest } from "@/types/swap";
-import { Image as ImageIcon, ShoppingBag, Truck } from "lucide-react";
+import { Image as ImageIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 
 type PreValuationPanelProps = {
@@ -73,14 +73,14 @@ export function PreValuationPanel({
               src={imageUrl}
             />
           ) : (
-            <div className="flex h-full flex-col items-center justify-center text-slate-300">
+            <div className="flex h-full flex-col items-center justify-center text-slate-400">
               <ImageIcon size={36} />
               <p className="mt-2 text-[13px] font-medium">제품 이미지를 준비하고 있어요</p>
             </div>
           )}
         </div>
         <div className="border-t border-slate-100 px-4 py-3">
-          <p className="text-[13px] font-semibold leading-5 text-slate-400">{imageLabel}</p>
+          <p className="text-[13px] font-semibold leading-5 text-slate-500">{imageLabel}</p>
           <p className="mt-1 truncate text-[15px] font-bold leading-5 text-ink">
             {swapRequest?.appliance.modelName || fallbackProduct.label}
           </p>
@@ -105,16 +105,14 @@ export function PreValuationPanel({
               onClick={onOpenPurchase}
               type="button"
             >
-              <ShoppingBag size={18} />
               LG 가전 구매로 더 많은 할인을 받을게요
             </button>
             <button
-              className="flex min-h-14 w-full items-center justify-center gap-2 rounded-2xl border border-lgred/20 bg-white px-4 py-3 text-[13px] font-bold leading-5 text-lgred disabled:text-slate-300"
+              className="flex min-h-14 w-full items-center justify-center gap-2 rounded-2xl border border-lgred/20 bg-white px-4 py-3 text-[13px] font-bold leading-5 text-lgred disabled:text-slate-400"
               disabled={loading}
               onClick={onNext}
               type="button"
             >
-              <Truck size={18} />
               수거만 진행해서 크레딧을 받을게요
             </button>
           </div>

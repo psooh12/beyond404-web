@@ -131,7 +131,7 @@ export function PurchasePanel({
 
       <div className="mt-4 rounded-3xl bg-[#202632] px-4 py-4 text-white">
         <p className="text-[13px] font-semibold leading-5 text-white/65">기본 예상 보상이에요</p>
-        <p className="mt-1 text-[18px] font-bold leading-6">{estimatedCredit.toLocaleString()}원</p>
+        <p className="mt-1 text-[20px] font-bold leading-6">{estimatedCredit.toLocaleString()}원</p>
         <p className="mt-2 text-[13px] font-medium leading-5 text-white/70">
           최종 혜택은 선택한 제품 가격대에 따라 달라져요.
         </p>
@@ -200,11 +200,11 @@ export function PurchasePanel({
           </p>
           <div className="mt-3 grid grid-cols-2 gap-2">
             <div className="rounded-2xl bg-white px-3 py-2">
-              <p className="text-[10px] font-semibold text-slate-400">예상 혜택</p>
+              <p className="text-[10px] font-semibold text-slate-500">예상 혜택</p>
               <p className="mt-1 text-[13px] font-bold text-lgred">{selectedPurchaseBenefit.toLocaleString()}원</p>
             </div>
             <div className="rounded-2xl bg-white px-3 py-2">
-              <p className="text-[10px] font-semibold text-slate-400">예상 결제</p>
+              <p className="text-[10px] font-semibold text-slate-500">예상 결제</p>
               <p className="mt-1 text-[13px] font-bold text-ink">{selectedFinalPrice.toLocaleString()}원</p>
             </div>
           </div>
@@ -269,7 +269,7 @@ function ProductDetailSheet({
         className="flex max-h-[84%] min-h-[70%] w-full flex-col overflow-hidden rounded-t-[28px] bg-white shadow-2xl animate-[sheetUp_.24s_ease-out]"
         onClick={(event) => event.stopPropagation()}
       >
-        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           <div className="relative h-72 overflow-hidden rounded-t-[28px] bg-[#f5f7fb]">
             <img alt={product.name} className="h-full w-full object-cover object-center" src={product.imageUrl} />
             <button
@@ -334,7 +334,7 @@ function ProductDetailSheet({
             <div className="mt-3 grid grid-cols-3 gap-2">
               {product.specs.map((spec) => (
                 <div key={spec.label} className="rounded-2xl bg-slate-50 px-3 py-2">
-                  <p className="text-[10px] font-semibold text-slate-400">{spec.label}</p>
+                  <p className="text-[10px] font-semibold text-slate-500">{spec.label}</p>
                   <p className="mt-1 text-[12px] font-bold leading-4 text-ink">{spec.value}</p>
                 </div>
               ))}
@@ -374,7 +374,7 @@ function PriceTile({
 }) {
   return (
     <div className="rounded-2xl bg-white p-3">
-      <p className="text-[11px] font-semibold text-slate-400">{label}</p>
+      <p className="text-[11px] font-semibold text-slate-500">{label}</p>
       <p className={`mt-1 text-[13px] font-bold ${strong ? "text-ink" : accent ? "text-lgred" : "text-slate-600"}`}>
         {value}
       </p>

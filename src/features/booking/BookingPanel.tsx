@@ -11,6 +11,7 @@ type BookingPanelProps = {
   swapRequest: SwapRequest | null;
   loading: boolean;
   bookingPurpose?: BookingPurpose;
+  errorMessage?: string;
   onBooking: (booking: BookingSelection) => void;
 };
 
@@ -115,7 +116,7 @@ const bookingCopies: Record<BookingPurpose, BookingCopy> = {
     timeDescription: "09:00부터 18:00까지, 30분 단위로 예약 가능한 시간만 표시돼요.",
     unavailableTimeLabel: "예약 마감",
     scheduleLoadingLabel: "예약 접수 중...",
-    scheduleSubmitLabel: "수거 예약을 요청할게요",
+    scheduleSubmitLabel: "수거 요청을 예약했어요",
     addressMapFallback: "수거 위치를 검색해 주세요",
     locationPermissionError:
       "현재 접속 환경에서는 GPS 사용이 제한되어 있어요. HTTPS 환경에서 위치 권한을 허용하거나 직접 입력으로 진행해 주세요.",
@@ -274,7 +275,7 @@ async function geocodeAddress(query: string) {
   };
 }
 
-export function BookingPanel({ swapRequest, loading, bookingPurpose = "pickup", onBooking }: BookingPanelProps) {
+export function BookingPanel({ swapRequest, loading, bookingPurpose = "pickup", errorMessage, onBooking }: BookingPanelProps) {
   const [mode, setMode] = useState<BookingMode>("schedule");
   const canBook = Boolean(swapRequest && swapRequest.preValuation.maxEstimatedValue > 0);
   const copy = bookingCopies[bookingPurpose];
@@ -306,6 +307,12 @@ export function BookingPanel({ swapRequest, loading, bookingPurpose = "pickup", 
           <InstantCallBooking canBook={canBook} copy={copy} loading={loading} onBooking={onBooking} />
         )}
       </div>
+
+      {errorMessage ? (
+        <p className="mt-3 rounded-2xl bg-red-50 px-4 py-3 text-xs font-semibold leading-5 text-red-600">
+          {errorMessage}
+        </p>
+      ) : null}
     </section>
   );
 }
@@ -351,6 +358,36 @@ function ScheduleBooking({
   const [availability, setAvailability] = useState<BookingAvailabilitySlot[]>([]);
   const [availabilityLoading, setAvailabilityLoading] = useState(false);
   const [availabilityError, setAvailabilityError] = useState("");
+  const [pinLocating, setPinLocating] = useState(false);
+
+  const handleUseCurrentLocation = async () => {
+    if (!isSecureGpsAvailable()) {
+      return;
+    }
+    setPinLocating(true);
+    try {
+      const coords = await new Promise<GeolocationCoordinates>((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(
+          (position) => resolve(position.coords),
+          (error) => reject(error),
+          { enableHighAccuracy: true, maximumAge: 0, timeout: 15000 },
+        );
+      });
+      const nextCoords = { lat: coords.latitude, lng: coords.longitude };
+      let nextAddress = `현재 위치 (${nextCoords.lat.toFixed(5)}, ${nextCoords.lng.toFixed(5)})`;
+      try {
+        nextAddress = await reverseGeocode(nextCoords.lat, nextCoords.lng);
+      } catch {
+        // 좌표만으로도 충분히 유효해요.
+      }
+      setPickupCoords(nextCoords);
+      setPickupAddress(nextAddress);
+    } catch {
+      // 위치 권한 거부/실패 시 조용히 무시해요.
+    } finally {
+      setPinLocating(false);
+    }
+  };
 
   useEffect(() => {
     let active = true;
@@ -398,70 +435,10 @@ function ScheduleBooking({
         <PickupPreviewMap
           addressLabel={pickupAddress || "수거 위치를 확인해 주세요"}
           coordinates={pickupCoords}
+          onLocate={() => void handleUseCurrentLocation()}
+          locating={pinLocating}
           pinLabel="P"
         />
-      </div>
-
-      <p className="mt-3 rounded-2xl bg-slate-50 px-4 py-3 text-xs font-bold leading-5 text-slate-500">
-        시간 예약에서도 선택한 수거 위치가 지도에 바로 표시됩니다.
-      </p>
-
-      <div className="rounded-3xl bg-slate-50 p-4">
-        <p className="text-[13px] font-bold text-ink">{copy.dateTitle}</p>
-        <div className="mt-3 rounded-2xl border border-slate-200 bg-white px-4 py-3">
-          <label className="block text-xs font-semibold text-slate-400" htmlFor="pickup-date">
-            {copy.datePickerLabel}
-          </label>
-          <input
-            id="pickup-date"
-            className="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3 text-[13px] font-semibold text-ink outline-none focus:border-lgred"
-            min={todayString()}
-            type="date"
-            value={selectedDate}
-            onChange={(event) => setSelectedDate(event.target.value)}
-          />
-          <p className="mt-3 text-[13px] font-bold text-ink">{formatDateLabel(selectedDate)}</p>
-        </div>
-      </div>
-
-      <div className="mt-4 rounded-3xl bg-slate-50 p-4">
-        <p className="text-[13px] font-bold text-ink">{copy.timeTitle}</p>
-        <p className="mt-1 text-xs font-semibold text-slate-400">
-          {copy.timeDescription}
-        </p>
-        {availabilityError ? (
-          <p className="mt-2 rounded-xl bg-amber-50 px-3 py-2 text-[11px] font-bold leading-5 text-amber-700">
-            {availabilityError}
-          </p>
-        ) : null}
-        <div className="mt-3 grid grid-cols-3 gap-2">
-          {timeSlots.map((time) => {
-            const active = time === selectedTime;
-            const slot = availabilityByTime.get(time);
-            const disabled = slot ? !slot.available : availabilityLoading;
-
-            return (
-              <button
-                key={time}
-                className={`min-h-12 rounded-xl border px-2 py-2 text-[13px] font-bold transition ${
-                  disabled
-                    ? "cursor-not-allowed border-slate-200 bg-slate-100 text-slate-300"
-                    : active
-                      ? "border-lgred bg-lgred text-white"
-                      : "border-slate-200 bg-white text-ink"
-                }`}
-                disabled={disabled}
-                onClick={() => setSelectedTime(time)}
-                type="button"
-              >
-                <span className="block">{time}</span>
-                {slot && !slot.available ? (
-                  <span className="mt-0.5 block text-[10px] font-bold">{copy.unavailableTimeLabel}</span>
-                ) : null}
-              </button>
-            );
-          })}
-        </div>
       </div>
 
       <ManualAddressEditor
@@ -659,7 +636,8 @@ function InstantCallBooking({
           addressLabel={mapLabel}
           coordinates={activeCoords}
           onCoordinateSelect={(coordinates) => void selectMapLocation(coordinates)}
-          pinText={copy.mapPinLabel}
+          onLocate={() => void refreshCurrentLocation()}
+          locating={locating}
           pinLabel={pickupMethod === "gps" ? "M" : "P"}
         />
       </div>
@@ -680,7 +658,7 @@ function InstantCallBooking({
               <Crosshair size={18} />
             </span>
             <div>
-              <p className="text-xs font-semibold text-slate-400">{copy.currentLocationEyebrow}</p>
+              <p className="text-xs font-semibold text-slate-500">{copy.currentLocationEyebrow}</p>
               <p className="mt-1 text-[15px] font-bold leading-5 text-ink">{pickupAddress || copy.currentAddressFallback}</p>
               <p className="mt-1 text-xs font-semibold text-slate-500">{copy.detailHint}</p>
             </div>
@@ -733,14 +711,16 @@ function PickupPreviewMap({
   addressLabel,
   coordinates,
   onCoordinateSelect,
-  pinText,
+  onLocate,
+  locating = false,
   pinLabel,
 }: {
-  adjustHint: string;
+  adjustHint?: string;
   addressLabel: string;
   coordinates: PickupCoordinates | null;
   onCoordinateSelect?: (coordinates: PickupCoordinates) => void;
-  pinText: string;
+  onLocate?: () => void;
+  locating?: boolean;
   pinLabel: string;
 }) {
   if (!coordinates) {
@@ -765,18 +745,23 @@ function PickupPreviewMap({
         path={[]}
         zoom={19}
       />
-      <div className="pointer-events-none absolute left-4 top-4 rounded-full bg-white/95 px-4 py-2 text-sm font-black text-ink shadow">
+      <div className="pointer-events-none absolute left-4 top-4 rounded-full bg-white/95 px-4 py-2 text-sm font-bold text-ink shadow">
         {addressLabel}
       </div>
-      <div className="pointer-events-none absolute left-4 right-4 top-16 rounded-2xl bg-white/90 px-4 py-3 text-center text-xs font-semibold text-slate-700 shadow">
-        {adjustHint}
-      </div>
-      <div className="pointer-events-none absolute bottom-4 right-4 rounded-full bg-[#1f6fff] px-3 py-2 text-xs font-bold text-white shadow-lg">
-        <span className="flex items-center gap-1">
-          <MapPin size={14} />
-          {pinLabel === "M" ? "내 위치" : pinText}
-        </span>
-      </div>
+      {adjustHint ? (
+        <div className="pointer-events-none absolute left-4 right-4 top-16 rounded-2xl bg-white/90 px-4 py-3 text-center text-xs font-semibold text-slate-700 shadow">
+          {adjustHint}
+        </div>
+      ) : null}
+      <button
+        type="button"
+        aria-label="현재 위치로 이동"
+        className="absolute bottom-4 right-4 flex h-11 w-11 items-center justify-center rounded-full bg-white text-ink shadow-lg transition active:scale-95 disabled:opacity-60"
+        disabled={!onLocate || locating}
+        onClick={onLocate}
+      >
+        {locating ? <Loader2 className="animate-spin" size={20} /> : <MapPin size={22} />}
+      </button>
     </div>
   );
 }
@@ -931,21 +916,11 @@ function ManualAddressEditor({
         </span>
         <div>
           <p className="text-[13px] font-bold text-ink">{copy.manualTitle}</p>
-          <p className="text-xs font-semibold text-slate-400">
+          <p className="text-xs font-semibold text-slate-500">
             {copy.manualDescription}
           </p>
         </div>
       </div>
-
-      <button
-        className="mb-3 flex h-11 w-full items-center justify-center gap-2 rounded-2xl border border-lgred/20 bg-white text-[13px] font-bold text-lgred disabled:text-slate-300"
-        disabled={locating}
-        onClick={() => void useCurrentLocation()}
-        type="button"
-      >
-        {locating ? <Loader2 className="animate-spin" size={16} /> : <Crosshair size={16} />}
-        {locating ? "현재 위치 확인 중" : copy.manualButtonLabel}
-      </button>
 
       <input
         className="h-11 w-full rounded-2xl border border-lgred/20 bg-white px-4 text-[13px] font-semibold text-ink outline-none focus:border-lgred"
@@ -965,7 +940,7 @@ function ManualAddressEditor({
 
       <div className="mt-2 min-h-4">
         {searching ? (
-          <div className="flex items-center gap-2 px-1 text-[11px] font-bold text-slate-400">
+          <div className="flex items-center gap-2 px-1 text-[11px] font-bold text-slate-500">
             <Loader2 className="animate-spin" size={13} />
             주소 검색 중...
           </div>

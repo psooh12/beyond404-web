@@ -419,8 +419,8 @@ export function TrackingPanel({ swapRequest, onNext }: TrackingPanelProps) {
                   </div>
                   <div className="flex-1 pb-2">
                     <div className="flex items-start justify-between gap-3">
-                      <p className={`text-[14px] leading-5 ${active ? "font-bold text-ink" : "font-semibold text-slate-400"}`}>{step.label}</p>
-                      <span className="text-xs font-medium text-slate-400">{formatDateTime(event?.createdAt ?? null)}</span>
+                      <p className={`text-[14px] leading-5 ${active ? "font-bold text-ink" : "font-semibold text-slate-500"}`}>{step.label}</p>
+                      <span className="text-xs font-medium text-slate-500">{formatDateTime(event?.createdAt ?? null)}</span>
                     </div>
                     <p className="mt-1 text-[13px] font-medium leading-5 text-slate-500">
                       {event?.message ?? defaultEventMessage(step.key)}
